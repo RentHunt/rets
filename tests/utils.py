@@ -3,12 +3,13 @@ from requests.structures import CaseInsensitiveDict
 from requests.utils import get_encoding_from_headers
 
 
-def make_response(status_code: int = 200,
-                  content: bytes = b'',
-                  headers: dict = None,
-                  reason: str = None,
-                  encoding: str = None,
-                  ) -> Response:
+def make_response(
+    status_code: int = 200,
+    content: bytes = b'',
+    headers: dict = None,
+    reason: str = None,
+    encoding: str = None,
+) -> Response:
     response = Response()
     response.status_code = status_code
     response._content = content

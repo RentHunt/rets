@@ -26,7 +26,7 @@ def parse_object(response: Response) -> Sequence[Object]:
         return _parse_multipart(response)
     else:
         object_ = _parse_body_part(response)
-        return (object_,) if object_ is not None else ()
+        return (object_, ) if object_ is not None else ()
 
 
 def _parse_multipart(response: ResponseLike) -> Sequence[Object]:
@@ -114,8 +114,10 @@ def _guess_mime_type(headers: CaseInsensitiveDict) -> Optional[str]:
     return mime_type or None
 
 
-def _decode_headers(headers: CaseInsensitiveDict, encoding: str) -> CaseInsensitiveDict:
-    return CaseInsensitiveDict({
-        k.decode(encoding): v.decode(encoding)
-        for k, v in headers.items()
-    })
+def _decode_headers(
+    headers: CaseInsensitiveDict, encoding: str
+) -> CaseInsensitiveDict:
+    return CaseInsensitiveDict(
+        {k.decode(encoding): v.decode(encoding)
+         for k, v in headers.items()}
+    )

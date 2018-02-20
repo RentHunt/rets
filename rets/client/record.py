@@ -4,7 +4,6 @@ from rets.http import Object
 
 
 class Record:
-
     def __init__(self, resource_class, data: dict):
         self.resource = resource_class.resource
         self.resource_class = resource_class

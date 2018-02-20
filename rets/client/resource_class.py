@@ -8,7 +8,6 @@ from rets.http import RetsHttpClient, SearchResult
 
 
 class ResourceClass:
-
     def __init__(self, resource, metadata: dict, http_client: RetsHttpClient):
         self.resource = resource
         self._http = http_client
@@ -34,21 +33,32 @@ class ResourceClass:
     @property
     def table(self) -> Sequence[dict]:
         if self._table is None:
-            self._table = tuple(get_metadata_data(self._http, 'table', resource=self.resource.name, class_=self.name))
+            self._table = tuple(
+                get_metadata_data(
+                    self._http,
+                    'table',
+                    resource=self.resource.name,
+                    class_=self.name
+                )
+            )
         return self._table
 
     @property
     def fields(self) -> FrozenSet[str]:
         if self._fields is None:
-            self._fields = frozenset(field['SystemName'] for field in self.table)
+            self._fields = frozenset(
+                field['SystemName'] for field in self.table
+            )
         return self._fields
 
-    def search(self,
-               query: Union[str, Mapping[str, str]],
-               fields: Sequence[str] = None,
-               parse: bool = True,
-               include_tz: bool = False,
-               **kwargs) -> SearchResult:
+    def search(
+        self,
+        query: Union[str, Mapping[str, str]],
+        fields: Sequence[str] = None,
+        parse: bool = True,
+        include_tz: bool = False,
+        **kwargs
+    ) -> SearchResult:
         query = self._validate_query(query)
         if fields:
             fields = self._validate_fields(fields)
@@ -77,7 +87,9 @@ class ResourceClass:
         if isinstance(query, str):
             return query
         self._assert_fields(query)
-        return ','.join('(%s=%s)' % (field, value) for field, value in query.items())
+        return ','.join(
+            '(%s=%s)' % (field, value) for field, value in query.items()
+        )
 
     def _validate_fields(self, fields: Sequence[str]) -> str:
         self._assert_fields(fields)

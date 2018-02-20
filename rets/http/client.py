@@ -18,18 +18,18 @@ from rets.errors import RetsApiError, RetsClientError
 
 
 class RetsHttpClient:
-
-    def __init__(self,
-                 login_url: str,
-                 username: str = None,
-                 password: str = None,
-                 auth_type: str = 'digest',
-                 user_agent: str = 'rets-python/0.3',
-                 user_agent_password: str = None,
-                 rets_version: str = '1.7.2',
-                 capability_urls: str = None,
-                 cookie_dict: dict = None
-                 ):
+    def __init__(
+        self,
+        login_url: str,
+        username: str = None,
+        password: str = None,
+        auth_type: str = 'digest',
+        user_agent: str = 'rets-python/0.3',
+        user_agent_password: str = None,
+        rets_version: str = '1.7.2',
+        capability_urls: str = None,
+        cookie_dict: dict = None
+    ):
         self._user_agent = user_agent
         self._user_agent_password = user_agent_password
         self._rets_version = rets_version
@@ -104,12 +104,13 @@ class RetsHttpClient:
     def get_system_metadata(self) -> SystemMetadata:
         return parse_system(self._get_metadata('system'))
 
-    def get_metadata(self,
-                     type_: str,
-                     resource: str = None,
-                     class_: str = None,
-                     metadata_id: str = '0',
-                     ) -> Sequence[Metadata]:
+    def get_metadata(
+        self,
+        type_: str,
+        resource: str = None,
+        class_: str = None,
+        metadata_id: str = '0',
+    ) -> Sequence[Metadata]:
         if resource:
             id_ = ':'.join(filter(None, [resource, class_]))
         else:
@@ -142,19 +143,20 @@ class RetsHttpClient:
         }
         return self._http_post(self._url_for('GetMetadata'), payload=payload)
 
-    def search(self,
-               resource: str,
-               class_: str,
-               query: str,
-               select: str = None,
-               count: int = 1,
-               limit: int = None,
-               offset: int = 1,
-               restricted_indicator: str = None,
-               standard_names: bool = False,
-               query_type: str = 'DMQL2',
-               format_: str = 'COMPACT-DECODED',
-               ) -> SearchResult:
+    def search(
+        self,
+        resource: str,
+        class_: str,
+        query: str,
+        select: str = None,
+        count: int = 1,
+        limit: int = None,
+        offset: int = 1,
+        restricted_indicator: str = None,
+        standard_names: bool = False,
+        query_type: str = 'DMQL2',
+        format_: str = 'COMPACT-DECODED',
+    ) -> SearchResult:
         """
         The Search transaction requests that the server search one or more searchable databases
         and return the list of qualifying records. The body of the response contains the records
@@ -218,16 +220,19 @@ class RetsHttpClient:
         # None values indicate that the argument should be omitted from the request
         payload = {k: v for k, v in raw_payload.items() if v is not None}
 
-        rets_response = self._http_post(self._url_for('Search'), payload=payload)
+        rets_response = self._http_post(
+            self._url_for('Search'), payload=payload
+        )
         return parse_search(rets_response)
 
-    def get_object(self,
-                   resource: str,
-                   object_type: str,
-                   resource_keys: Union[str, Mapping[str, Any], Sequence[str]],
-                   media_types: Union[str, Sequence[str]] = '*/*',
-                   location: bool = False,
-                   ) -> Sequence[Object]:
+    def get_object(
+        self,
+        resource: str,
+        object_type: str,
+        resource_keys: Union[str, Mapping[str, Any], Sequence[str]],
+        media_types: Union[str, Sequence[str]] = '*/*',
+        location: bool = False,
+    ) -> Sequence[Object]:
         """
         The GetObject transaction is used to retrieve structured information related to known
         system entities. It can be used to retrieve multimedia files and other key-related
@@ -276,31 +281,43 @@ class RetsHttpClient:
             'ID': _build_entity_object_ids(resource_keys),
             'Location': int(location),
         }
-        response = self._http_post(self._url_for('GetObject'), headers=headers, payload=payload)
+        response = self._http_post(
+            self._url_for('GetObject'), headers=headers, payload=payload
+        )
         return parse_object(response)
 
     def _url_for(self, transaction: str) -> str:
         try:
             url = self._capabilities[transaction]
         except KeyError:
-            raise RetsClientError('No URL found for transaction %s' % transaction)
+            raise RetsClientError(
+                'No URL found for transaction %s' % transaction
+            )
         return urljoin(self._base_url, url)
 
-    def _http_post(self, url: str, headers: dict = None, payload: dict = None) -> Response:
+    def _http_post(
+        self, url: str, headers: dict = None, payload: dict = None
+    ) -> Response:
         if not self._session:
-            raise RetsClientError('Session not instantiated. Call .login() first')
+            raise RetsClientError(
+                'Session not instantiated. Call .login() first'
+            )
 
         if headers is None:
             headers = {}
         else:
             headers = headers.copy()
-        headers.update({
-            'User-Agent': self.user_agent,
-            'RETS-Version': self.rets_version,
-        })
+        headers.update(
+            {
+                'User-Agent': self.user_agent,
+                'RETS-Version': self.rets_version,
+            }
+        )
 
         if self._http_auth:
-            response = self._session.post(url, auth=self._http_auth, headers=headers, data=payload)
+            response = self._session.post(
+                url, auth=self._http_auth, headers=headers, data=payload
+            )
         else:
             headers['RETS-UA-Authorization'] = self._user_agent_auth_digest()
             response = self._session.post(url, headers=headers, data=payload)
@@ -315,7 +332,9 @@ class RetsHttpClient:
         user_password = '%s:%s' % (self.user_agent, self._user_agent_password)
         a1 = md5(user_password.encode()).hexdigest()
 
-        digest_values = '%s::%s:%s' % (a1, self._rets_session_id, self.rets_version)
+        digest_values = '%s::%s:%s' % (
+            a1, self._rets_session_id, self.rets_version
+        )
         return md5(digest_values.encode()).hexdigest()
 
 
@@ -327,7 +346,9 @@ def _get_http_auth(username: str, password: str, auth_type: str) -> AuthBase:
     raise RetsClientError('unknown auth type %s' % auth_type)
 
 
-def _build_entity_object_ids(entities: Union[str, Mapping[str, Any], Sequence[str]]) -> str:
+def _build_entity_object_ids(
+    entities: Union[str, Mapping[str, Any], Sequence[str]]
+) -> str:
     """
     Builds the string of object ids as required by the GetObject transaction request. See
     section 5.3 for the full definition:
@@ -339,7 +360,7 @@ def _build_entity_object_ids(entities: Union[str, Mapping[str, Any], Sequence[st
     object-id       ::= 1*5DIGIT
     """
     if isinstance(entities, str):
-        return _build_entity_object_ids((entities,))
+        return _build_entity_object_ids((entities, ))
     elif isinstance(entities, Sequence):
         return _build_entity_object_ids({e: '*' for e in entities})
     elif not isinstance(entities, Mapping):
@@ -353,8 +374,10 @@ def _build_entity_object_ids(entities: Union[str, Mapping[str, Any], Sequence[st
         else:
             raise RetsClientError('Invalid entities argument')
 
-    return ','.join('%s:%s' % (entity, _build_object_ids(object_ids))
-                    for entity, object_ids in entities.items())
+    return ','.join(
+        '%s:%s' % (entity, _build_object_ids(object_ids))
+        for entity, object_ids in entities.items()
+    )
 
 
 def _build_accepted_media_types(media_types: Union[str, Sequence[str]]) -> str:
@@ -377,4 +400,6 @@ def _build_accepted_media_types(media_types: Union[str, Sequence[str]]) -> str:
         raise RetsClientError('Invalid media types argument')
 
     n = float(len(media_types))
-    return ','.join('%s;%.4f' % (types, 1 - i / n) for i, types in enumerate(media_types))
+    return ','.join(
+        '%s;%.4f' % (types, 1 - i / n) for i, types in enumerate(media_types)
+    )

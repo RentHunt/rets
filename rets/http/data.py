@@ -7,15 +7,17 @@ Metadata = namedtuple('Metadata', (
     'data',
 ))
 
-Object = namedtuple('Object', (
-    'mime_type',
-    'content_id',
-    'description',
-    'object_id',
-    'url',
-    'preferred',
-    'data',
-))
+Object = namedtuple(
+    'Object', (
+        'mime_type',
+        'content_id',
+        'description',
+        'object_id',
+        'url',
+        'preferred',
+        'data',
+    )
+)
 
 SearchResult = namedtuple('SearchResult', (
     'count',
@@ -23,11 +25,13 @@ SearchResult = namedtuple('SearchResult', (
     'data',
 ))
 
-SystemMetadata = namedtuple('SystemMetadata', (
-    'system_id',
-    'system_description',
-    'system_date',
-    'system_version',
-    'time_zone_offset',
-    'comments',
-))
+SystemMetadata = namedtuple(
+    'SystemMetadata', (
+        'system_id',
+        'system_description',
+        'system_date',
+        'system_version',
+        'time_zone_offset',
+        'comments',
+    )
+)

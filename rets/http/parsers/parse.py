@@ -74,7 +74,9 @@ def parse_metadata(response: Response) -> Sequence[Metadata]:
     </RETS>
     """
     elem = parse_xml(response)
-    metadata_elems = [e for e in elem.findall('*') if e.tag.startswith('METADATA-')]
+    metadata_elems = [
+        e for e in elem.findall('*') if e.tag.startswith('METADATA-')
+    ]
     if metadata_elems is None:
         return ()
 
@@ -87,7 +89,9 @@ def parse_metadata(response: Response) -> Sequence[Metadata]:
             data=tuple(_parse_data(elem)),
         )
 
-    return tuple(parse_metadata_elem(metadata_elem) for metadata_elem in metadata_elems)
+    return tuple(
+        parse_metadata_elem(metadata_elem) for metadata_elem in metadata_elems
+    )
 
 
 def parse_system(response: Response) -> SystemMetadata:
@@ -178,8 +182,10 @@ def _parse_data(elem: Element) -> Iterable[dict]:
 
     data_elems = elem.findall('DATA')
 
-    return (OrderedDict(zip_longest(columns, _parse_data_line(data, delimiter)))
-            for data in data_elems)
+    return (
+        OrderedDict(zip_longest(columns, _parse_data_line(data, delimiter)))
+        for data in data_elems
+    )
 
 
 def _find_or_raise(elem: Element, child_elem_name: str) -> Element:

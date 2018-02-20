@@ -7,12 +7,15 @@ from rets.http import RetsHttpClient
 
 
 class Resource:
-
     def __init__(self, metadata: dict, http_client: RetsHttpClient):
         self._http = http_client
         self._metadata = metadata
-        self._classes = self._classes_from_metadata(metadata.get('_classes', ()))
-        self._object_types = self._object_types_from_metadata(metadata.get('_object_types', ()))
+        self._classes = self._classes_from_metadata(
+            metadata.get('_classes', ())
+        )
+        self._object_types = self._object_types_from_metadata(
+            metadata.get('_object_types', ())
+        )
 
     @property
     def name(self) -> str:
@@ -26,9 +29,13 @@ class Resource:
     def metadata(self) -> dict:
         metadata = dict(self._metadata)
         if self._classes:
-            metadata['_classes'] = tuple(resource_class.metadata for resource_class in self._classes)
+            metadata['_classes'] = tuple(
+                resource_class.metadata for resource_class in self._classes
+            )
         if self._object_types:
-            metadata['_object_types'] = tuple(object_type.metadata for object_type in self._object_types)
+            metadata['_object_types'] = tuple(
+                object_type.metadata for object_type in self._object_types
+            )
         return metadata
 
     @property
@@ -63,11 +70,18 @@ class Resource:
         metadata = get_metadata_data(self._http, 'object', resource=self.name)
         return self._object_types_from_metadata(metadata)
 
-    def _classes_from_metadata(self, classes_metadata: Sequence[dict]) -> Sequence[ResourceClass]:
-        return tuple(ResourceClass(self, m, self._http) for m in classes_metadata)
+    def _classes_from_metadata(self, classes_metadata: Sequence[dict]
+                              ) -> Sequence[ResourceClass]:
+        return tuple(
+            ResourceClass(self, m, self._http) for m in classes_metadata
+        )
 
-    def _object_types_from_metadata(self, object_types_metadata: Sequence[dict]) -> Sequence[ObjectType]:
-        return tuple(ObjectType(self, m, self._http) for m in object_types_metadata)
+    def _object_types_from_metadata(
+        self, object_types_metadata: Sequence[dict]
+    ) -> Sequence[ObjectType]:
+        return tuple(
+            ObjectType(self, m, self._http) for m in object_types_metadata
+        )
 
     def __repr__(self) -> str:
         return '<Resource: %s>' % self.name

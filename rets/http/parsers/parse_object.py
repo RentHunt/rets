@@ -93,7 +93,7 @@ def _parse_body_part(part: ResponseLike) -> Optional[Object]:
 
     return Object(
         mime_type=_guess_mime_type(headers),
-        content_id=headers['content-id'],
+        content_id=headers.get('content-id', None),
         description=headers.get('content-description'),
         object_id=headers['object-id'],
         url=location,

@@ -284,7 +284,22 @@ class RetsHttpClient:
         response = self._http_post(
             self._url_for('GetObject'), headers=headers, payload=payload
         )
-        return parse_object(response)
+        object_ = parse_object(response)
+        returned_object = []
+        for obj in object_:
+            if obj.content_id is not None:
+                returned_object.append(obj)
+                continue
+
+            if len(resource_keys) == 1:
+                returned_object.append(
+                    obj._replace(content_id=list(resource_keys.values())[0])
+                )
+            else:
+                raise RetsClientError(
+                    'The server\'s response does not contain content-id'
+                )
+        return returned_object
 
     def _url_for(self, transaction: str) -> str:
         try:

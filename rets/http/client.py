@@ -293,7 +293,7 @@ class RetsHttpClient:
 
             if len(resource_keys) == 1:
                 returned_object.append(
-                    obj._replace(content_id=list(resource_keys.values())[0])
+                    obj._replace(content_id=list(resource_keys.keys())[0])
                 )
             else:
                 raise RetsClientError(

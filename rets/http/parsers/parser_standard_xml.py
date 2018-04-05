@@ -12,28 +12,6 @@ from rets.http.data import Metadata, SearchResult, SystemMetadata
 from rets.http.parsers.base_parser import Parser, ResponseLike
 
 
-# Ref: https://stackoverflow.com/a/10076823/4979620
-def etree_to_dict(t):
-    d = {t.tag: {} if t.attrib else None}
-    children = list(t)
-    if children:
-        dd = defaultdict(list)
-        for dc in map(etree_to_dict, children):
-            for k, v in dc.items():
-                dd[k].append(v)
-        d = {t.tag: {k: v[0] if len(v) == 1 else v for k, v in dd.items()}}
-    if t.attrib:
-        d[t.tag].update(('@' + k, v) for k, v in t.attrib.items())
-    if t.text:
-        text = t.text.strip()
-        if children or t.attrib:
-            if text:
-                d[t.tag]['#text'] = text
-        else:
-            d[t.tag] = text
-    return d
-
-
 class StandardXmlParser(Parser):
     @classmethod
     def parse_xml(cls, response: ResponseLike) -> dict:
@@ -82,11 +60,9 @@ class StandardXmlParser(Parser):
         if response_elem is None:
             return {}
 
-        property_elem = response_elem.find('PropertyDetails')
-        if response_elem is None:
-            return {}
+        property_elem = response_elem.findall('PropertyDetails')
 
-        data = etree_to_dict(property_elem)['PropertyDetails']
+        data = tuple([cls._parse_property_details(d) for d in property_elem])
 
         return SearchResult(
             count=count,
@@ -103,3 +79,26 @@ class StandardXmlParser(Parser):
         rets_status = root.find('RETS-STATUS')
         elem = rets_status if rets_status is not None else root
         return int(elem.get('ReplyCode')), elem.get('ReplyText')
+
+    @classmethod
+    def _parse_property_details(cls, t: Element) -> dict:
+        # Ref: https://stackoverflow.com/a/10076823/4979620
+        d = {t.tag: {} if t.attrib else None}
+        children = list(t)
+        if children:
+            dd = defaultdict(list)
+            for dc in map(cls._parse_property_details, children):
+                for k, v in dc.items():
+                    dd[k].append(v)
+            d = {t.tag: {k: v[0] if len(v) == 1 else v for k, v in dd.items()}}
+        if t.attrib:
+            d[t.tag].update((k, v) for k, v in t.attrib.items())
+        if t.text:
+            text = t.text.strip()
+            if children or t.attrib:
+                if text:
+                    d[t.tag]['#text'] = text
+            else:
+                d[t.tag] = text
+
+        return d

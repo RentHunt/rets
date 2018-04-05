@@ -8,10 +8,12 @@ from requests_toolbelt.multipart.decoder import MultipartDecoder
 
 from rets.errors import RetsApiError, RetsParseError
 from rets.http.data import Object
-from rets.http.parsers.parse import DEFAULT_ENCODING, ResponseLike, parse_xml
+from rets.http.parsers.base_parser import Parser, ResponseLike
+
+DEFAULT_ENCODING = 'utf-8'
 
 
-def parse_object(response: Response) -> Sequence[Object]:
+def parse_object(response: Response, parser: Parser) -> Sequence[Object]:
     """
     Parse the response from a GetObject transaction. If there are multiple
     objects to be returned then the response should be a multipart response.
@@ -23,14 +25,14 @@ def parse_object(response: Response) -> Sequence[Object]:
     content_type = response.headers['content-type']
 
     if 'multipart/parallel' in content_type:
-        return _parse_multipart(response)
+        return _parse_multipart(response, parser)
 
     else:
-        object_ = _parse_body_part(response)
-        return (object_, ) if object_ is not None else ()
+        object_ = _parse_body_part(response, parser)
+        return (object_,) if object_ is not None else ()
 
 
-def _parse_multipart(response: ResponseLike) -> Sequence[Object]:
+def _parse_multipart(response: ResponseLike, parser: Parser) -> Sequence[Object]:
     """
     RFC 2045 describes the format of an Internet message body containing a MIME message. The
     body contains one or more body parts, each preceded by a boundary delimiter line, and the
@@ -68,17 +70,17 @@ def _parse_multipart(response: ResponseLike) -> Sequence[Object]:
     for part in multipart.parts:
         part.headers = _decode_headers(part.headers, encoding)
 
-    objects = (_parse_body_part(part) for part in multipart.parts)
+    objects = (_parse_body_part(part, parser) for part in multipart.parts)
     return tuple(object_ for object_ in objects if object_ is not None)
 
 
-def _parse_body_part(part: ResponseLike) -> Optional[Object]:
+def _parse_body_part(part: ResponseLike, parser: Parser) -> Optional[Object]:
     headers = part.headers
     content_type = headers['content-type']
 
     if 'text/xml' in content_type:
         try:
-            parse_xml(part)
+            parser.parse_xml(part)
         except RetsApiError as e:
             if e.reply_code == 20403:  # No object found
                 return None
@@ -96,7 +98,7 @@ def _parse_body_part(part: ResponseLike) -> Optional[Object]:
 
     return Object(
         mime_type=_guess_mime_type(headers),
-        content_id=headers.get('content-id', None),
+        content_id=headers.get('content-id'),
         description=headers.get('content-description'),
         object_id=headers['object-id'],
         url=location,

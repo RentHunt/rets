@@ -1,5 +1,6 @@
 from requests.structures import CaseInsensitiveDict
 from rets import Object
+from rets.http.parsers import CompactParser
 from rets.http.parsers.parse_object import parse_object, _guess_mime_type
 from tests.utils import make_response
 
@@ -16,7 +17,7 @@ def test_parse_object_single_location_true():
     body = b''
     response = make_response(200, body, headers)
 
-    assert parse_object(response) == (
+    assert parse_object(response, CompactParser) == (
         Object(
             mime_type='image/jpeg',
             content_id='20170817170218718581000000',
@@ -40,7 +41,7 @@ def test_parse_object_single_location_false():
     body = b'binary content'
     response = make_response(200, body, headers)
 
-    assert parse_object(response) == (
+    assert parse_object(response, CompactParser) == (
         Object(
             mime_type='image/jpeg',
             content_id='20170817170218718581000000',
@@ -63,7 +64,7 @@ def test_parse_object_not_found():
     body = b'<RETS ReplyCode="20403" ReplyText="No such object available for this resource"/>'
     response = make_response(200, body, headers)
 
-    assert parse_object(response) == ()
+    assert parse_object(response, CompactParser) == ()
 
 
 def test_parse_object_multi_location_true():
@@ -92,7 +93,7 @@ def test_parse_object_multi_location_true():
     )
     response = make_response(200, body, headers)
 
-    assert parse_object(response) == (
+    assert parse_object(response, CompactParser) == (
         Object(
             mime_type='image/jpeg',
             content_id='20170817170218718581000000',
@@ -140,7 +141,7 @@ def test_parse_object_multi_location_false():
     )
     response = make_response(200, body, headers)
 
-    assert parse_object(response) == (
+    assert parse_object(response, CompactParser) == (
         Object(
             mime_type='image/jpeg',
             content_id='20170817170218718581000000',
@@ -181,7 +182,7 @@ def test_parse_object_no_encoding():
     )
     response = make_response(200, body, headers)
 
-    assert parse_object(response) == (
+    assert parse_object(response, CompactParser) == (
         Object(
             mime_type='image/jpeg',
             content_id='20170817170218718581000000',
@@ -212,7 +213,7 @@ def test_parse_object_location_true_content_type_xml():
     )
     response = make_response(200, body, headers)
 
-    assert parse_object(response) == (
+    assert parse_object(response, CompactParser) == (
         Object(
             mime_type='image/jpeg',
             content_id='8240151',

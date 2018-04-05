@@ -24,6 +24,7 @@ def parse_object(response: Response) -> Sequence[Object]:
 
     if 'multipart/parallel' in content_type:
         return _parse_multipart(response)
+
     else:
         object_ = _parse_body_part(response)
         return (object_, ) if object_ is not None else ()
@@ -81,7 +82,9 @@ def _parse_body_part(part: ResponseLike) -> Optional[Object]:
         except RetsApiError as e:
             if e.reply_code == 20403:  # No object found
                 return None
+
             raise
+
     elif 'text/html' in content_type:
         raise RetsParseError(part.content)
 
@@ -114,10 +117,7 @@ def _guess_mime_type(headers: CaseInsensitiveDict) -> Optional[str]:
     return mime_type or None
 
 
-def _decode_headers(
-    headers: CaseInsensitiveDict, encoding: str
-) -> CaseInsensitiveDict:
+def _decode_headers(headers: CaseInsensitiveDict, encoding: str) -> CaseInsensitiveDict:
     return CaseInsensitiveDict(
-        {k.decode(encoding): v.decode(encoding)
-         for k, v in headers.items()}
+        {k.decode(encoding): v.decode(encoding) for k, v in headers.items()}
     )

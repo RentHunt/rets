@@ -68,9 +68,8 @@ def test_parse_object_not_found():
 
 def test_parse_object_multi_location_true():
     headers = {
-        'Content-Type':
-        'multipart/parallel;boundary="FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr";'
-        'charset=US-ASCII',
+        'Content-Type': 'multipart/parallel;boundary="FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr";'
+        'charset=US-ASCII'
     }
     body = (
         b'\r\n--FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr'
@@ -117,9 +116,8 @@ def test_parse_object_multi_location_true():
 
 def test_parse_object_multi_location_false():
     headers = {
-        'Content-Type':
-        'multipart/parallel;boundary="FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr";'
-        'charset=US-ASCII',
+        'Content-Type': 'multipart/parallel;boundary="FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr";'
+        'charset=US-ASCII'
     }
     body = (
         b'\r\n--FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr'
@@ -167,8 +165,7 @@ def test_parse_object_multi_location_false():
 def test_parse_object_no_encoding():
     # Note: there is no charset in the content-type
     headers = {
-        'Content-Type':
-        'multipart/parallel;boundary="FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr"'
+        'Content-Type': 'multipart/parallel;boundary="FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr"'
     }
     body = (
         b'\r\n--FLEX1t7l9O45tdFUw2e92ASD3qKPxB0lf0Wo7atUz9qlAFoQdBGpDr'
@@ -199,8 +196,7 @@ def test_parse_object_no_encoding():
 
 def test_parse_object_location_true_content_type_xml():
     headers = {
-        'Content-Type':
-        'multipart/parallel; boundary=2ce97979.83bf.368b.86c2.cc9295f41e3d',
+        'Content-Type': 'multipart/parallel; boundary=2ce97979.83bf.368b.86c2.cc9295f41e3d'
     }
     body = (
         b'\r\n--2ce97979.83bf.368b.86c2.cc9295f41e3d'
@@ -232,41 +228,28 @@ def test_parse_object_location_true_content_type_xml():
 def test_guess_mime_type():
     # Can guess from URL extension
     assert 'image/jpeg' == _guess_mime_type(
-        CaseInsensitiveDict({
-            'Location': 'http://cdn.rets.com/1.jpg'
-        })
+        CaseInsensitiveDict({'Location': 'http://cdn.rets.com/1.jpg'})
     )
     assert 'image/png' == _guess_mime_type(
-        CaseInsensitiveDict({
-            'Location': 'http://cdn.rets.com/1.png'
-        })
+        CaseInsensitiveDict({'Location': 'http://cdn.rets.com/1.png'})
     )
     assert 'application/pdf' == _guess_mime_type(
-        CaseInsensitiveDict({
-            'Location': 'http://cdn.rets.com/1.pdf'
-        })
+        CaseInsensitiveDict({'Location': 'http://cdn.rets.com/1.pdf'})
     )
 
     # Can guess from content type if extension is missing
     assert 'image/jpeg' == _guess_mime_type(
         CaseInsensitiveDict(
-            {
-                'Location': 'http://cdn.rets.com/1',
-                'Content-Type': 'image/jpeg',
-            }
+            {'Location': 'http://cdn.rets.com/1', 'Content-Type': 'image/jpeg'}
         )
     )
 
     # Can guess from content type
     assert 'image/jpeg' == _guess_mime_type(
-        CaseInsensitiveDict({
-            'Content-Type': 'image/jpeg'
-        })
+        CaseInsensitiveDict({'Content-Type': 'image/jpeg'})
     )
     assert 'image/jpeg' == _guess_mime_type(
-        CaseInsensitiveDict({
-            'Content-Type': 'image/jpeg;charset=US-ASCII'
-        })
+        CaseInsensitiveDict({'Content-Type': 'image/jpeg;charset=US-ASCII'})
     )
 
     assert None == _guess_mime_type(CaseInsensitiveDict({'Content-Type': ''}))

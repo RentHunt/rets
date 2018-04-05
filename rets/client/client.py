@@ -3,6 +3,7 @@ from typing import Optional, Sequence
 from rets.client.resource import Resource
 from rets.client.utils import get_metadata_data
 from rets.http import RetsHttpClient
+
 """
 Example of metadata dict:
 
@@ -36,6 +37,7 @@ metadata = [{
 
 
 class RetsClient:
+
     def __init__(
         self,
         *args,
@@ -46,10 +48,7 @@ class RetsClient:
         **kwargs
     ):
         self.http = http_client or RetsHttpClient(
-            *args,
-            capability_urls=capability_urls,
-            cookie_dict=cookie_dict,
-            **kwargs
+            *args, capability_urls=capability_urls, cookie_dict=cookie_dict, **kwargs
         )
         if not (capability_urls and cookie_dict):
             self.http.login()
@@ -71,12 +70,12 @@ class RetsClient:
         for resource in self.resources:
             if resource.name == name:
                 return resource
+
         raise KeyError('unknown resource %s' % name)
 
     def _fetch_resources(self) -> Sequence[Resource]:
         metadata = get_metadata_data(self.http, 'resource')
         return self._resources_from_metadata(metadata)
 
-    def _resources_from_metadata(self, metadata: Sequence[dict]
-                                ) -> Sequence[Resource]:
+    def _resources_from_metadata(self, metadata: Sequence[dict]) -> Sequence[Resource]:
         return tuple(Resource(m, self.http) for m in metadata)

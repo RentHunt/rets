@@ -6,18 +6,13 @@ import requests
 from requests import Response
 from requests.auth import AuthBase, HTTPBasicAuth, HTTPDigestAuth
 
-from rets.http.parsers import (
-    parse_capability_urls,
-    parse_metadata,
-    parse_object,
-    parse_search,
-    parse_system,
-)
+from rets.http.parsers import parse_object, parser_factory
 from rets.http.data import Object, Metadata, SearchResult, SystemMetadata
 from rets.errors import RetsApiError, RetsClientError
 
 
 class RetsHttpClient:
+
     def __init__(
         self,
         login_url: str,
@@ -28,7 +23,8 @@ class RetsHttpClient:
         user_agent_password: str = None,
         rets_version: str = '1.7.2',
         capability_urls: str = None,
-        cookie_dict: dict = None
+        cookie_dict: dict = None,
+        format_: str = 'COMPACT-DECODED',
     ):
         self._user_agent = user_agent
         self._user_agent_password = user_agent_password
@@ -36,9 +32,7 @@ class RetsHttpClient:
 
         splits = urlsplit(login_url)
         self._base_url = urlunsplit((splits.scheme, splits.netloc, '', '', ''))
-        self._capabilities = capability_urls or {
-            'Login': splits.path,
-        }
+        self._capabilities = capability_urls or {'Login': splits.path}
 
         # Authenticate using either the user agent auth header or (basic or digest) HTTP auth.
         if not user_agent_password:
@@ -58,6 +52,9 @@ class RetsHttpClient:
 
         # this session id is part of the rets standard for use with a user agent password
         self._rets_session_id = ''
+
+        self.format_ = format_
+        self.parser = parser_factory(format_)
 
     @property
     def user_agent(self) -> str:
@@ -94,7 +91,7 @@ class RetsHttpClient:
 
     def login(self) -> dict:
         response = self._http_post(self._url_for('Login'))
-        self._capabilities = parse_capability_urls(response)
+        self._capabilities = self.parser.parse_capability_urls(response)
         return self._capabilities
 
     def logout(self) -> None:
@@ -102,7 +99,7 @@ class RetsHttpClient:
         self._session = None
 
     def get_system_metadata(self) -> SystemMetadata:
-        return parse_system(self._get_metadata('system'))
+        return self.parser.parse_system(self._get_metadata('system'))
 
     def get_metadata(
         self,
@@ -117,10 +114,12 @@ class RetsHttpClient:
             id_ = metadata_id
 
         try:
-            return parse_metadata(self._get_metadata(type_, id_))
+            return self.parser.parse_metadata(self._get_metadata(type_, id_))
+
         except RetsApiError as e:
             if e.reply_code == 20503:  # No Metadata found
                 return ()
+
             raise
 
     def _get_metadata(self, type_: str, metadata_id: str = '0') -> Response:
@@ -137,9 +136,7 @@ class RetsHttpClient:
             Note: The metadata_id for METADATA-SYSTEM and METADATA-RESOURCE must be 0 or *.
         """
         payload = {
-            'type': 'METADATA-' + type_.upper(),
-            'id': metadata_id,
-            'Format': 'COMPACT',
+            'type': 'METADATA-' + type_.upper(), 'id': metadata_id, 'Format': 'COMPACT'
         }
         return self._http_post(self._url_for('GetMetadata'), payload=payload)
 
@@ -220,10 +217,8 @@ class RetsHttpClient:
         # None values indicate that the argument should be omitted from the request
         payload = {k: v for k, v in raw_payload.items() if v is not None}
 
-        rets_response = self._http_post(
-            self._url_for('Search'), payload=payload
-        )
-        return parse_search(rets_response)
+        rets_response = self._http_post(self._url_for('Search'), payload=payload)
+        return parser_factory(format_).parse_search(rets_response)
 
     def get_object(
         self,
@@ -272,19 +267,18 @@ class RetsHttpClient:
             functionality and the lifetime of the returned URL is not given by the RETS
             specification.
         """
-        headers = {
-            'Accept': _build_accepted_media_types(media_types),
-        }
+        headers = {'Accept': _build_accepted_media_types(media_types)}
         payload = {
             'Resource': resource,
             'Type': object_type,
             'ID': _build_entity_object_ids(resource_keys),
             'Location': int(location),
+            'Format': self.format_,
         }
         response = self._http_post(
             self._url_for('GetObject'), headers=headers, payload=payload
         )
-        object_ = parse_object(response)
+        object_ = parse_object(response, self.parser)
         returned_object = []
         for obj in object_:
             if obj.content_id is not None:
@@ -299,34 +293,31 @@ class RetsHttpClient:
                 raise RetsClientError(
                     'The server\'s response does not contain content-id'
                 )
+
         return returned_object
 
     def _url_for(self, transaction: str) -> str:
         try:
             url = self._capabilities[transaction]
         except KeyError:
-            raise RetsClientError(
-                'No URL found for transaction %s' % transaction
-            )
+            raise RetsClientError('No URL found for transaction %s' % transaction)
+
         return urljoin(self._base_url, url)
 
     def _http_post(
         self, url: str, headers: dict = None, payload: dict = None
     ) -> Response:
         if not self._session:
-            raise RetsClientError(
-                'Session not instantiated. Call .login() first'
-            )
+            raise RetsClientError('Session not instantiated. Call .login() first')
 
         if headers is None:
-            headers = {}
+            headers = {
+                'Format': self.format_,
+            }
         else:
             headers = headers.copy()
         headers.update(
-            {
-                'User-Agent': self.user_agent,
-                'RETS-Version': self.rets_version,
-            }
+            {'User-Agent': self.user_agent, 'RETS-Version': self.rets_version}
         )
 
         if self._http_auth:
@@ -347,17 +338,17 @@ class RetsHttpClient:
         user_password = '%s:%s' % (self.user_agent, self._user_agent_password)
         a1 = md5(user_password.encode()).hexdigest()
 
-        digest_values = '%s::%s:%s' % (
-            a1, self._rets_session_id, self.rets_version
-        )
+        digest_values = '%s::%s:%s' % (a1, self._rets_session_id, self.rets_version)
         return md5(digest_values.encode()).hexdigest()
 
 
 def _get_http_auth(username: str, password: str, auth_type: str) -> AuthBase:
     if auth_type == 'basic':
         return HTTPBasicAuth(username, password)
+
     if auth_type == 'digest':
         return HTTPDigestAuth(username, password)
+
     raise RetsClientError('unknown auth type %s' % auth_type)
 
 
@@ -375,17 +366,21 @@ def _build_entity_object_ids(
     object-id       ::= 1*5DIGIT
     """
     if isinstance(entities, str):
-        return _build_entity_object_ids((entities, ))
+        return _build_entity_object_ids((entities,))
+
     elif isinstance(entities, Sequence):
         return _build_entity_object_ids({e: '*' for e in entities})
+
     elif not isinstance(entities, Mapping):
         raise RetsClientError('Invalid entities argument')
 
     def _build_object_ids(object_ids: Any) -> str:
         if object_ids in ('*', 0, '0'):
             return str(object_ids)
+
         elif isinstance(object_ids, Sequence):
             return ':'.join(str(o) for o in object_ids)
+
         else:
             raise RetsClientError('Invalid entities argument')
 
@@ -411,6 +406,7 @@ def _build_accepted_media_types(media_types: Union[str, Sequence[str]]) -> str:
     """
     if isinstance(media_types, str):
         return media_types
+
     elif not isinstance(media_types, Sequence):
         raise RetsClientError('Invalid media types argument')
 

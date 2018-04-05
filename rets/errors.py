@@ -11,6 +11,7 @@ class RetsParseError(RetsClientError):
 
 
 class RetsApiError(RetsClientError):
+
     def __init__(self, reply_code: int, reply_text: str, xml: str):
         super().__init__('[%i] %s\n\n%s' % (reply_code, reply_text, xml))
         self.reply_code = reply_code

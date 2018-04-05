@@ -1,5 +1,3 @@
 from rets.client.client import RetsClient
 
-__all__ = [
-    'RetsClient',
-]
+__all__ = ['RetsClient']

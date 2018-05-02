@@ -62,7 +62,7 @@ class StandardXmlParser(Parser):
 
         property_elem = response_elem.findall('PropertyDetails')
 
-        data = tuple([cls._parse_property_details(d) for d in property_elem])
+        data = tuple([cls._parse_property_details(d).get("PropertyDetails") for d in property_elem])
 
         return SearchResult(
             count=count,

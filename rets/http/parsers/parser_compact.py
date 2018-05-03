@@ -14,7 +14,17 @@ class CompactParser(Parser):
 
     @classmethod
     def parse_xml(cls, response: ResponseLike) -> Element:
-        root = XML(response.content)
+        # TODO(tmattio): This should be a parameter.
+        # If we find ourselves modifying it again, refactor please.
+        if isinstance(response.content, str):
+            root = XML(response.content)
+        elif isinstance(response.content, bytes):
+            try:
+                root = XML(response.content.decode('utf-8'))
+            except UnicodeDecodeError:
+                root = XML(response.content.decode('latin-1'))
+        else:
+            raise ValueError('The reponse must be a string or bytes.')
 
         reply_code, reply_text = cls._parse_rets_status(root)
         if reply_code and reply_text != "Operation Successful":

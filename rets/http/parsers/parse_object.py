@@ -76,7 +76,10 @@ def _parse_multipart(response: ResponseLike, parser: Parser) -> Sequence[Object]
 
 def _parse_body_part(part: ResponseLike, parser: Parser) -> Optional[Object]:
     headers = part.headers
-    content_type = headers['content-type']
+    try:
+        content_type = headers['content-type']
+    except KeyError:
+        return None
 
     if 'text/xml' in content_type:
         try:

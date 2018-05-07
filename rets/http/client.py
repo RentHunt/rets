@@ -35,10 +35,7 @@ class RetsHttpClient:
         self._capabilities = capability_urls or {'Login': splits.path}
 
         # Authenticate using either the user agent auth header or (basic or digest) HTTP auth.
-        if not user_agent_password:
-            self._http_auth = _get_http_auth(username, password, auth_type)
-        else:
-            self._http_auth = None
+        self._http_auth = _get_http_auth(username, password, auth_type)
 
         # we use a session to keep track of cookies that are required for certain MLSes
         self._session = requests.Session()
@@ -316,21 +313,21 @@ class RetsHttpClient:
             }
         else:
             headers = headers.copy()
+
         headers.update(
             {'User-Agent': self.user_agent, 'RETS-Version': self.rets_version}
         )
 
-        if self._http_auth:
-            response = self._session.post(
-                url, auth=self._http_auth, headers=headers, data=payload
-            )
-        else:
+        if self._user_agent_password:
             headers['RETS-UA-Authorization'] = self._user_agent_auth_digest()
-            response = self._session.post(url, headers=headers, data=payload)
+
+        response = self._session.post(
+            url, auth=self._http_auth, headers=headers, data=payload
+        )
 
         response.raise_for_status()
 
-        self._rets_session_id = response.cookies.get('RETS-Session-ID', '')
+        self._rets_session_id = response.cookies.get('RETS-Session-ID', self._rets_session_id)
 
         return response
 
@@ -339,7 +336,7 @@ class RetsHttpClient:
         a1 = md5(user_password.encode()).hexdigest()
 
         digest_values = '%s::%s:%s' % (a1, self._rets_session_id, self.rets_version)
-        return md5(digest_values.encode()).hexdigest()
+        return f"Digest {md5(digest_values.encode()).hexdigest()}"
 
 
 def _get_http_auth(username: str, password: str, auth_type: str) -> AuthBase:
